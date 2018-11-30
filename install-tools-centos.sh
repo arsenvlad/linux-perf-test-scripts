@@ -18,3 +18,4 @@ wget https://azcopyvnext.azureedge.net/release20181102/azcopy_linux_amd64_10.0.4
 tar xvf azcopy_linux_amd64_10.0.4.tar.gz
 mv -f azcopy_linux_amd64_10.0.4/azcopy /usr/bin
 
+# End

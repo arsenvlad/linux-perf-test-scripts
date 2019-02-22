@@ -40,6 +40,7 @@
   "variables": {
     "location": "[resourceGroup().location]",
     "nicName": "[concat(parameters('vmName'),'-nic')]",
+    "nsgName": "[concat(parameters('vmName'),'-nsg')]",
     "addressPrefix": "10.0.0.0/16",
     "subnetName": "subnet",
     "subnetPrefix": "10.0.1.0/24",
@@ -54,6 +55,30 @@
   },
   "resources": [
     {
+      "apiVersion": "2018-10-01",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[variables('nsgName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow_SSH",
+            "properties": {
+              "description": "Allow SSH access",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
       "apiVersion": "2017-06-01",
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('diagnosticsStorageAccount')]",
@@ -65,7 +90,7 @@
       "properties": {}
     },
     {
-      "apiVersion": "2017-03-30",
+      "apiVersion": "2018-10-01",
       "type": "Microsoft.Compute/availabilitySets",
       "name": "[concat(parameters('vmName'),'-as')]",
       "location": "[variables('location')]",
@@ -78,10 +103,13 @@
       }
     },
     {
-      "apiVersion": "2017-06-01",
+      "apiVersion": "2018-10-01",
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[variables('virtualNetworkName')]",
       "location": "[variables('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]"
+      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -92,14 +120,17 @@
           {
             "name": "[variables('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('subnetPrefix')]"
+              "addressPrefix": "[variables('subnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+              }
             }
           }
         ]
       }
     },
     {
-      "apiVersion": "2017-06-01",
+      "apiVersion": "2018-10-01",
       "type": "Microsoft.Network/publicIPAddresses",
       "name": "[concat(variables('publicIPAddressName'),copyIndex())]",
       "location": "[variables('location')]",
@@ -115,7 +146,7 @@
       }
     },
     {
-      "apiVersion": "2017-06-01",
+      "apiVersion": "2018-10-01",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[concat(variables('nicName'),copyIndex())]",
       "location": "[variables('location')]",
@@ -146,7 +177,7 @@
       }
     },
     {
-      "apiVersion": "2017-03-30",
+      "apiVersion": "2018-10-01",
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[concat(parameters('vmName'),copyIndex())]",
       "location": "[variables('location')]",
@@ -196,7 +227,7 @@
         "diagnosticsProfile": {
           "bootDiagnostics": {
             "enabled": true,
-            "storageUri": "[concat('http://', variables('diagnosticsStorageAccount'), '.blob.core.windows.net')]"
+            "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('diagnosticsStorageAccount')), '2017-06-01').primaryEndpoints.blob)]"
           }
         }
       }

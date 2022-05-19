@@ -1,9 +1,6 @@
 # Install tools that are available via repo
-yum install -y epel-release
-yum install -y dstat iperf3 iperf fio qperf sockperf
-
-# Install development tools including git, make, gcc to compile other tools as needed
-yum groupinstall -y "Development Tools"
+sudo apt update
+sudo apt install -y dstat iperf3 fio qperf sockperf build-essential
 
 # Install ntttcp for Linux
 cd ~
